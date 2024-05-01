@@ -19,6 +19,9 @@ jobs:
           git diff --name-only HEAD^ HEAD >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
+      - name: Install jq for JSON handling
+        run: sudo apt-get install jq -y
+
       - name: Read changed files and create a summary prompt
         id: create_prompt
         run: |
@@ -28,20 +31,29 @@ jobs:
               CONTENT+="$(cat $file) "
             fi
           done
-          echo "::set-output name=prompt::本日の学習記録をコミットしたので、何について学習したかを要約してください。学習内容はマークダウン形式で記述しているので、タイトル(#、##)の情報を重要視すればいい要約ができるのではないかと思います。学習内容は以下です: $CONTENT"
+          JSON_CONTENT=$(echo "$CONTENT" | jq -aRs.)
+          echo "::set-output name=prompt::本日の学習記録をコミットしたので、何について学習したかを要約してください。学習内容はマークダウン形式で記述しているので、タイトル(#、##)の情報を重要視すればいい要約ができるのではないかと思います。学習内容は以下です: $JSON_CONTENT"
 
       - name: Summarize commits with OpenAI GPT-4
         id: summarize
-        uses: actions/http-client@v1
+        uses: actions/github-script@v6
         with:
-          url: 'https://api.openai.com/v1/engines/gpt-4/completions'
-          method: POST
-          headers: '{"Authorization": "Bearer ${{ secrets.OPENAI_API_KEY }}"}'
-          body: '{"prompt": "${{ steps.create_prompt.outputs.prompt }}", "max_tokens": 150, "temperature": 0.5}'
-          contentType: 'application/json'
+          script: |
+            const headers = {
+              'Authorization': `Bearer ${{ secrets.OPENAI_API_KEY }}`,
+              'Content-Type': 'application/json'
+            };
+            const body = {
+              prompt: "${{ steps.create_prompt.outputs.prompt }}",
+              max_tokens: 150,
+              temperature: 0.5
+            };
+            const response = await axios.post('https://api.openai.com/v1/engines/gpt-4/completions', body, { headers });
+            return response.data.choices[0].text.trim();
+          result-encoding: string
 
       - name: Send message to Slack
         uses: slackapi/slack-github-action@v1.18.0
         with:
           slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          payload: '{"text": "中山航の本日の学習記録: ${{ steps.summarize.outputs.data }}"}'
+          payload: '{"text": "中山航の本日の学習記録: ${{ steps.summarize.outputs.result }}"}'
