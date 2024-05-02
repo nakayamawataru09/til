@@ -37,7 +37,10 @@ jobs:
           echo "::set-output name=summary::$SUMMARY"
 
       - name: Send message to Slack
-        uses: slackapi/slack-github-action@v1.18.0
+        uses: slackapi/slack-github-action@v1.26.0
         with:
           webhookUrl: ${{ secrets.SLACK_WEBHOOK_URL }}
-          payload: '{"text": "中山航の本日の学習記録: ${{ steps.summarize.outputs.summary }}"}'
+          payload: |
+            {
+              "text": "中山航の本日の学習記録: ${{ steps.summarize.outputs.summary }}"
+            }
