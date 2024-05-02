@@ -39,7 +39,7 @@ jobs:
       - name: Send message to Slack
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          webhookUrl: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
             {
               "text": "中山航の本日の学習記録: ${{ steps.summarize.outputs.summary }}"
