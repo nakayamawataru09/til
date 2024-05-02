@@ -36,11 +36,31 @@ jobs:
           SUMMARY=$(curl -X POST -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" -H "Content-Type: application/json" -d '{"prompt": "'${{ steps.create_prompt.outputs.prompt }}'", "max_tokens": 150, "temperature": 0.5}' https://api.openai.com/v1/engines/gpt-4/completions | jq -r '.choices[0].text')
           echo "::set-output name=summary::$SUMMARY"
 
-      - name: Send message to Slack
-        uses: slackapi/slack-github-action@v1.26.0
+      - name: Send GitHub Action trigger data to Slack workflow
+        uses: slackapi/slack-github-action@v1.16.0
         with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
           payload: |
             {
-              "text": "中山航の本日の学習記録: ${{ steps.summarize.outputs.summary }}"
+              "text": "中山航の本日の学習記録: ${{ steps.summarize.outputs.summary }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "中山航の本日の学習記録: ${{ steps.summarize.outputs.summary }}"
+                  }
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "Author: <https://github.com/${{ github.event.sender.login }}|@${{ github.event.sender.login }}>"
+                    }
+                  ]
+                }
+              ]
             }
+        env:
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_INCOMING_WEBHOOK_URL }}
