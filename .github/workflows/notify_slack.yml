@@ -18,7 +18,7 @@ jobs:
       - name: Fetch commit messages
         id: fetch_commits
         run: |
-          git log --pretty=format:"%s" HEAD^..HEAD > commit_messages.txt
+          git log --pretty=format:"%s" HEAD~1..HEAD > commit_messages.txt
 
       - name: Read commit messages and create a summary prompt
         id: create_prompt
