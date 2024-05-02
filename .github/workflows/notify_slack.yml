@@ -15,15 +15,19 @@ jobs:
       - name: Install curl and jq
         run: sudo apt-get install curl jq -y
 
-      - name: Fetch last commit diff
-        id: fetch_diff
+      - name: Fetch changes or current commit content
+        id: fetch_changes
         run: |
-          git diff HEAD~1..HEAD > last_commit_diff.txt
+          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+            git diff HEAD~1..HEAD > changes.txt
+          else
+            git show HEAD > changes.txt
+          fi
 
-      - name: Create a summary prompt from commit diff
+      - name: Create a summary prompt from commit changes
         id: create_prompt
         run: |
-          CONTENT=$(<last_commit_diff.txt)
+          CONTENT=$(<changes.txt)
           echo "::set-output name=prompt::最新のコミットでの変更内容を要約してください。変更されたファイルの内容は以下のとおりです。$CONTENT"
 
       - name: Summarize commit changes with OpenAI GPT-4
