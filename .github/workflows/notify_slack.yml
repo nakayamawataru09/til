@@ -15,18 +15,18 @@ jobs:
       - name: Install curl and jq
         run: sudo apt-get install curl jq -y
 
-      - name: Fetch commit messages
-        id: fetch_commits
+      - name: Fetch last commit diff
+        id: fetch_diff
         run: |
-          git log --pretty=format:"%s" HEAD~1..HEAD > commit_messages.txt
+          git diff HEAD~1..HEAD > last_commit_diff.txt
 
-      - name: Read commit messages and create a summary prompt
+      - name: Create a summary prompt from commit diff
         id: create_prompt
         run: |
-          CONTENT=$(<commit_messages.txt)
-          echo "::set-output name=prompt::本日の学習記録をコミットしたので、何について学習したかを要約してください。学習内容はマークダウン形式で記述しているので、タイトル(#、##)の情報を重要視すればいい要約ができるのではないかと思います。学習内容は以下です。$CONTENT"
+          CONTENT=$(<last_commit_diff.txt)
+          echo "::set-output name=prompt::最新のコミットでの変更内容を要約してください。変更されたファイルの内容は以下のとおりです。$CONTENT"
 
-      - name: Summarize commits with OpenAI GPT-4
+      - name: Summarize commit changes with OpenAI GPT-4
         id: summarize
         run: |
           SUMMARY=$(curl -X POST -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" -H "Content-Type: application/json" -d '{"prompt": "'${{ steps.create_prompt.outputs.prompt }}'", "max_tokens": 150, "temperature": 0.5}' https://api.openai.com/v1/engines/gpt-4/completions | jq -r '.choices[0].text')
