@@ -17,6 +17,7 @@ def update_user_profile(user_id, profile_data):
     }
     response = requests.post(url, json=profile_data, headers=headers)
     return response.json()
+
 # ドキュメント追加後
 def bulk_import_user_profiles(api_token, csv_file_path):
     """ReproのユーザプロフィールバルクインポートAPIにCSVファイルをPOSTして、複数のユーザプロフィールを更新する
@@ -36,3 +37,5 @@ def bulk_import_user_profiles(api_token, csv_file_path):
     with open(csv_file_path, 'rb') as csv_file:
         response = requests.post(url, headers=headers, data=csv_file)
     return response.json()
+
+
